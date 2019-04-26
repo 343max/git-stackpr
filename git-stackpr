@@ -1,0 +1,39 @@
+#!/usr/bin/env python3
+
+# pip3 install gitpython
+# pip3 install PyGithub
+
+from git import Repo, Commit
+from pprint import pprint
+from github import Github
+from codecs import decode
+import os
+
+def create_pull_request(hash, parent):
+    commit = Commit(repo, decode(hash, 'hex'))
+    branch_name = '_pr_{}'.format(hash)
+    branch = repo.create_head(branch_name, hash)
+    branch.checkout()
+    repo.git.push('--set-upstream', 'origin', branch)
+
+    pr = hub_repo.create_pull(commit.message, "", base=parent, head=branch_name)
+
+    return branch_name
+
+path = os.getcwd()
+repo = Repo(path)
+hub = Github('key') # TODO
+hub_repo = hub.get_repo('343max/stack_demo_repo') # TODO
+
+head = repo.head
+assert not head.is_detached
+
+branch = head.reference
+log = branch.log()
+
+parent = 'master' # TODO
+
+for commit in list(filter(lambda l: l.message.startswith('commit: '), log)):
+    parent = create_pull_request(commit.newhexsha, parent)
+
+print('done')
